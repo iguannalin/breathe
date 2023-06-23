@@ -21,12 +21,8 @@ document.body.appendChild( renderer.domElement );
 
 // ORBIT CONTROLS
 const controls = new OrbitControls(camera, renderer.domElement);
-// controls.target = new THREE.Vector3(0, 0, 0);
-// controls.maxPolarAngle = Math.PI / 2;
-// controls.addEventListener("change", function () {
-//   renderer.render(scene, camera);
-// });
 
+// LOW-POLY HEART from https://www.turbosquid.com/3d-models/love-3d-model-1263821
 new MTLLoader().load('./Love_OBJ/Love.mtl',
 	function ( material ) {
     material.preload();
