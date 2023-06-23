@@ -1,61 +1,75 @@
 import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+let object;
+
+const ambientLight = new THREE.AmbientLight( 0xcc0099, 0.3 );
+scene.add( ambientLight );
+
+const pointLight = new THREE.PointLight( 0xff0000, 0.4 );
+camera.add( pointLight );
+scene.add( camera );
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 renderer.setClearColor(0x232323);
 document.body.appendChild( renderer.domElement );
 
-const leaf = new THREE.SphereGeometry(.5, 5, 5, 2, 6.3, 0, 3);
-const material = new THREE.MeshBasicMaterial({ color: 0xfff6e6, wireframe: true });
-const sphere = new THREE.Mesh(leaf, material);
-scene.add(sphere);
+// ORBIT CONTROLS
+const controls = new OrbitControls(camera, renderer.domElement);
+// controls.target = new THREE.Vector3(0, 0, 0);
+// controls.maxPolarAngle = Math.PI / 2;
+// controls.addEventListener("change", function () {
+//   renderer.render(scene, camera);
+// });
 
-camera.position.z = 5;
+new MTLLoader().load('./Love_OBJ/Love.mtl',
+	function ( material ) {
+    material.preload();
+    new OBJLoader().setMaterials(material).load( './Love_OBJ/Love.obj', function ( obj ) {
+      object = obj;
+      obj.scale.y = 1;
+      obj.position.y = -50;
+      obj.position.z = -150;
+      scene.add( obj );
+    }, undefined, function ( error ) {
+      console.error( error );
+    } );
+  },
+	// onProgress callback
+	function ( xhr ) {
+		console.log( (xhr.loaded / xhr.total * 100) + '% loaded' );
+	},
+	// onError callback
+	function ( err ) {
+		console.log( 'An error happened' );
+	}
+);
 
 let inhale = true;
-const inhaleTime = 0.006, 
-exhaleTime = 0.009;
+
+//controls.update() must be called after any manual changes to the camera's transform
+camera.position.set( 0, 20, 100 );
+controls.update();
 
 function animate() {
-  breathe();
-  sphere.rotation.x += 0.005;
-  sphere.rotation.y += 0.005;
-  sphere.rotation.z += 0.005;
+  if (object) {
+    if (inhale) {
+      object.position.z -= 1;
+      if (object.position.z <= -200) inhale = false;
+    }
+    else {
+      object.position.z += 1;
+      if (object.position.z >= -100) inhale = true;
+    }
+  }
 	requestAnimationFrame( animate );
+  controls.update();
 	renderer.render( scene, camera );
-}
-
-function checkBreath() {
-  if (sphere.scale.x >= 2) {
-    inhale = false;
-  } else if (sphere.scale.x <= 0.5) {
-    inhale = true;
-  }
-}
-
-function breathe() {
-  checkBreath();
-  var words = "";
-  const text = document.getElementById("text");
-
-  if (inhale) {
-    sphere.scale.x += inhaleTime;
-    sphere.scale.y += inhaleTime;
-    sphere.scale.z += inhaleTime;
-    words = "breathe in";
-    text.style.animation = "inhale 2.9s ease-in-out 1";
-  } else if (!inhale) {
-    sphere.scale.x -= exhaleTime;
-    sphere.scale.y -= exhaleTime;
-    sphere.scale.z -= exhaleTime;
-    words = "breathe out";
-    text.style.animation = "exhale 2.9s ease-in-out 1";
-  }
-
-  text.innerHTML = words;
 }
 
 animate();
